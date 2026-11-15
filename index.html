@@ -1132,11 +1132,12 @@ function runInput(a){
   else if(a==='U'){if(Q.pow.drz>0)return;if(p.y<=.02){p.vy=Q.pow.snk>0?9.4:7.4;p.y=.02;p.roll=0;p.wantRoll=false;sfx.jump();}}
   else if(a==='D'){if(Q.pow.drz>0)return;if(p.y>.05){p.vy=-15;p.wantRoll=true;}else{p.roll=.62;sfx.roll();}}
 }
-const swp={on:false,id:-1,x:0,y:0};
-cv.addEventListener('pointerdown',e=>{if(G.state!=='runner'||RUN.state!=='run')return;swp.on=true;swp.id=e.pointerId;swp.x=e.clientX;swp.y=e.clientY;try{cv.setPointerCapture(e.pointerId);}catch(_){}e.preventDefault();});
-cv.addEventListener('pointermove',e=>{if(!swp.on||e.pointerId!==swp.id)return;const dx=e.clientX-swp.x,dy=e.clientY-swp.y,th=20;
-  if(Math.abs(dx)>th||Math.abs(dy)>th){runInput(Math.abs(dx)>Math.abs(dy)?(dx>0?'R':'L'):(dy>0?'D':'U'));swp.x=e.clientX;swp.y=e.clientY;}});
-const swpEnd=e=>{if(e.pointerId===swp.id)swp.on=false;};
+const swp={on:false,id:-1,x:0,y:0,fired:false};
+// один свайп = одно действие: пока палец не поднят, второй раз не срабатывает
+const swpFire=(dx,dy,th)=>{if(swp.fired||Math.abs(dx)<th&&Math.abs(dy)<th)return;swp.fired=true;runInput(Math.abs(dx)>Math.abs(dy)?(dx>0?'R':'L'):(dy>0?'D':'U'));};
+cv.addEventListener('pointerdown',e=>{if(G.state!=='runner'||RUN.state!=='run'||swp.on)return;swp.on=true;swp.fired=false;swp.id=e.pointerId;swp.x=e.clientX;swp.y=e.clientY;try{cv.setPointerCapture(e.pointerId);}catch(_){}e.preventDefault();});
+cv.addEventListener('pointermove',e=>{if(swp.on&&e.pointerId===swp.id)swpFire(e.clientX-swp.x,e.clientY-swp.y,24);});
+const swpEnd=e=>{if(e.pointerId!==swp.id)return;if(swp.on&&e.type==='pointerup')swpFire(e.clientX-swp.x,e.clientY-swp.y,12);swp.on=false;swp.id=-1;};
 cv.addEventListener('pointerup',swpEnd);cv.addEventListener('pointercancel',swpEnd);
 
 /* ---------- логика ---------- */
